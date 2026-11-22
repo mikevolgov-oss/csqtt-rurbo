@@ -46,7 +46,9 @@ jobs:
             echo "Android sdkmanager not found under $ANDROID_HOME/cmdline-tools" >&2
             exit 1
           fi
+          set +o pipefail
           yes | "$SDKMANAGER" --licenses
+          set -o pipefail
           "$SDKMANAGER" --install "platforms;android-36" "build-tools;36.1.0"
 
       - name: Run JVM tests
