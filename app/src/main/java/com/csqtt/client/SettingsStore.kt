@@ -899,9 +899,9 @@ private val DEPLOY_LAST_INSPECTION_PANEL = booleanPreferencesKey("deploy_last_in
                 connectionPassword = secret.value,
                 connectionPasswordState = secret.state,
                 workersPerHash = WorkerCountPolicy.normalize(
-                    prefs[getProfileKey(WORKERS_PER_HASH, profile)] ?: 18,
+                    prefs[getProfileKey(WORKERS_PER_HASH, profile)] ?: defaultWorkersPerHash,
                 ),
-                extraWorkers = prefs[getProfileKey(EXTRA_WORKERS, profile)] ?: false,
+                extraWorkers = prefs[getProfileKey(EXTRA_WORKERS, profile)] ?: defaultExtraWorkers,
                 csqttLink = prefs[getProfileKey(CSQTT_LINK, profile)] ?: "",
                 csqttLinkMode = prefs[getProfileKey(CSQTT_LINK_MODE, profile)] ?: false,
                 subscriptionUrl = prefs[getProfileKey(SUBSCRIPTION_URL, profile)] ?: "",
