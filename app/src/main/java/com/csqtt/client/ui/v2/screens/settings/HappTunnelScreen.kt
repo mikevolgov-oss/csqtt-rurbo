@@ -173,8 +173,8 @@ internal fun HappTunnelScreen(settingsStore: SettingsStore, version: String, onS
                         shape = pill,
                     )
                 }
-                if (ownerHashes.isNotEmpty()) Text("Хеши владельца: ${ownerHashes.count { it !in removedOwner }} · свои: ${parts.size}", color = c.accent, fontSize = 12.sp)
-                if (ownerHashes.isEmpty() && !linkTokenActive) HappChoice("Режим хешей", when(hashMode) { "auto_api" -> "Авто API"; "auto_js" -> "Авто ВК"; else -> "Ручные хеши" }, listOf("Ручные хеши", "Авто API", "Авто ВК"), ::changeHash,
+                if (ownerHashes.isNotEmpty()) Text("Хеши владельца: ${ownerHashes.count { it !in removedOwner }} · свои: ${if (hashMode == "auto_api") "авто" else parts.size}", color = c.accent, fontSize = 12.sp)
+                if (!linkTokenActive) HappChoice("Режим хешей", when(hashMode) { "auto_api" -> "Авто API"; "auto_js" -> "Авто ВК"; else -> "Ручные хеши" }, listOf("Ручные хеши", "Авто API", "Авто ВК"), ::changeHash,
                     compact = true, shape = pill, tone = if(hashMode == "auto_js") orange else green, enabled = !busy,
                     help = "Ручные хеши — шесть хешей звонков без входа в VK. Авто API — получение через API VK. Авто ВК — получение через авторизованный аккаунт VK.")
                 HappChoice("Режим кредов", when(authMode) { "auto_js" -> "Авто ВК"; "legacy" -> "Капча"; else -> "Авто" }, if (ownerHashes.isNotEmpty()) listOf("Авто", "Капча") else listOf("Авто", "Капча", "Авто ВК"), { label ->
