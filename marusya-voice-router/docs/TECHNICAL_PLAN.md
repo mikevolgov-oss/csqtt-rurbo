@@ -55,3 +55,17 @@ Before any install experiment, the implementation must prove a safe path that pr
 ### Current conclusion
 
 The technical route is plausible but not yet validated end-to-end. The next work is to inspect the LSPatch-A15 submodule/API versions and the routing module's actual source/API entry points, then build and test in CI. No APK should be offered until CI produces a real artifact and the install path is safe.
+
+
+## CI build pipeline (2026-11-23)
+
+A GitHub Actions workflow was added at `.github/workflows/marusya-voice-router.yml` on the `marusya-voice-router` branch.
+
+- It checks out the upstream ChatGPT Audio Route source at pinned commit `6363e791ded3889b9b27b1fe6ed6057086778cad`.
+- It uses JDK 17, Gradle 8.9, Android SDK 36, and Build Tools 36.1.0.
+- It runs the upstream JVM tests and builds the Xposed module debug APK.
+- It uploads the APK as a 14-day Actions artifact.
+
+This pipeline intentionally builds the upstream module unchanged. A successful build proves compilation and tests only; it does not prove runtime compatibility on the Realme RMX3760 or solve the separate LSPatch signature/install conflict. Do not install a patched ChatGPT package or remove the Play Store app as part of this pipeline.
+
+The upstream module uses the modern `libxposed` entry API and calls `AudioTrack.setPreferredDevice` for scoped Voice playback, with a separate built-in back-microphone preference. Its source is MIT-licensed and remains attributed to the original author. The public release itself excludes development-only system-server observation and legacy compatibility entries.
