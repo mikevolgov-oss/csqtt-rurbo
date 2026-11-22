@@ -39,7 +39,7 @@ jobs:
       - name: Test and build compact APKs
         run: >-
           bash gradlew :app:testDebugUnitTest :app:assembleDebug --no-daemon
-          -Pcsqtt.abis=arm64-v8a -Pcsqtt.turboBuild=true -Pcsqtt.compactApk=true -Pcsqtt.debugVersionNameSuffix=-turbo.1
+          -Pcsqtt.abis=arm64-v8a -Pcsqtt.turboBuild=true -Pcsqtt.compactApk=true -Pcsqtt.debugVersionNameSuffix=-turbo.1 -Pcsqtt.debugApplicationIdSuffix=.turbo2 -Pcsqtt.debugAppLabel='CSQTT Turbo'
       - uses: actions/upload-artifact@v4
         with:
           name: CSQTT-Turbo-arm64-apk
