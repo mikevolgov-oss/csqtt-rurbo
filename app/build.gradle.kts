@@ -42,6 +42,8 @@ val releaseSigningProblems = mutableListOf<String>().apply {
 }
 val releaseSigningReady = releaseSigningProblems.isEmpty()
 
+val turboBuild = providers.gradleProperty("csqtt.turboBuild").orNull == "true"
+
 val supportedAbis = listOf("arm64-v8a", "armeabi-v7a", "x86_64")
 val selectedAbis = providers.gradleProperty("csqtt.abis").orNull
     ?.split(',')?.map(String::trim)?.filter(String::isNotEmpty)?.distinct()
@@ -69,6 +71,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
+        buildConfigField("boolean", "TURBO_BUILD", "false")
         applicationId = "csqttr.quic.amurcanov"
         minSdk = 26
         targetSdk = 37
@@ -107,15 +110,16 @@ android {
 
     buildTypes {
         getByName("debug") {
+            buildConfigField("boolean", "TURBO_BUILD", turboBuild.toString())
             if (providers.gradleProperty("csqtt.compactApk").orNull == "true") {
                 isMinifyEnabled = true
                 isShrinkResources = true
                 proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             }
             applicationIdSuffix = providers.gradleProperty("csqtt.debugApplicationIdSuffix")
-                .getOrElse(".forktest")
+                .getOrElse(if (turboBuild) ".turbo" else ".forktest")
             manifestPlaceholders["csqttDebugAppLabel"] = providers.gradleProperty("csqtt.debugAppLabel")
-                .getOrElse("@string/app_name")
+                .getOrElse(if (turboBuild) "CSQTT Turbo" else "@string/app_name")
             versionNameSuffix = providers.gradleProperty("csqtt.debugVersionNameSuffix")
                 .getOrElse("-fork-test.3")
         }

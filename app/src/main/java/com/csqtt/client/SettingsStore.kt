@@ -24,6 +24,12 @@ import org.json.JSONObject
 
 private fun <T> Flow<T>.onIo(): Flow<T> = flowOn(Dispatchers.IO)
 
+private val defaultWorkersPerHash: Int
+    get() = if (BuildConfig.TURBO_BUILD) CsqttConstants.Tunnel.DEFAULT_MAX_WORKERS else 18
+
+private val defaultExtraWorkers: Boolean
+    get() = BuildConfig.TURBO_BUILD
+
 internal data class DeploySettingsSnapshot(
     val profile: Int = -1,
     val ip: String = "",
@@ -86,8 +92,8 @@ internal data class ProfileConnectionSnapshot(
     val serverPeerPort: Int = CsqttConstants.Network.DEFAULT_SERVER_PEER_PORT,
     val connectionPassword: String = "",
     val connectionPasswordState: StoredSecretState = StoredSecretState.Missing,
-    val workersPerHash: Int = 18,
-    val extraWorkers: Boolean = false,
+    val workersPerHash: Int = defaultWorkersPerHash,
+    val extraWorkers: Boolean = defaultExtraWorkers,
     val csqttLink: String = "",
     val csqttLinkMode: Boolean = false,
     val subscriptionUrl: String = "",
@@ -494,7 +500,7 @@ private val DEPLOY_LAST_INSPECTION_PANEL = booleanPreferencesKey("deploy_last_in
     /** The most workers the active profile may use: «Экстра потоки» lifts 70 to 100, a subscription can lower it. */
     private fun workersMaximum(prefs: Preferences): Int {
         val profile = prefs[ACTIVE_PROFILE] ?: 0
-        val isExtra = prefs[getProfileKey(EXTRA_WORKERS, profile)] ?: false
+        val isExtra = prefs[getProfileKey(EXTRA_WORKERS, profile)] ?: defaultExtraWorkers
         val defaultMax = WorkerCountPolicy.defaultMaximum(isExtra)
         return prefs[getProfileKey(SUBSCRIPTION_POWER, profile)]
             ?.takeIf { it in 10..100 }
@@ -504,7 +510,7 @@ private val DEPLOY_LAST_INSPECTION_PANEL = booleanPreferencesKey("deploy_last_in
     val workersMaximum: Flow<Int> = dataStore.data.map { prefs -> workersMaximum(prefs) }
     val workersPerHash: Flow<Int> = dataStore.data.map { prefs ->
         val profile = prefs[ACTIVE_PROFILE] ?: 0
-        val current = prefs[getProfileKey(WORKERS_PER_HASH, profile)] ?: 18
+        val current = prefs[getProfileKey(WORKERS_PER_HASH, profile)] ?: defaultWorkersPerHash
         WorkerCountPolicy.normalize(current, maximum = workersMaximum(prefs))
     }
     val protocol: Flow<String> = dataStore.data.map { prefs ->
@@ -893,9 +899,9 @@ private val DEPLOY_LAST_INSPECTION_PANEL = booleanPreferencesKey("deploy_last_in
                 connectionPassword = secret.value,
                 connectionPasswordState = secret.state,
                 workersPerHash = WorkerCountPolicy.normalize(
-                    prefs[getProfileKey(WORKERS_PER_HASH, profile)] ?: 18,
+                    prefs[getProfileKey(WORKERS_PER_HASH, profile)] ?: defaultWorkersPerHash,
                 ),
-                extraWorkers = prefs[getProfileKey(EXTRA_WORKERS, profile)] ?: false,
+                extraWorkers = prefs[getProfileKey(EXTRA_WORKERS, profile)] ?: defaultExtraWorkers,
                 csqttLink = prefs[getProfileKey(CSQTT_LINK, profile)] ?: "",
                 csqttLinkMode = prefs[getProfileKey(CSQTT_LINK_MODE, profile)] ?: false,
                 subscriptionUrl = prefs[getProfileKey(SUBSCRIPTION_URL, profile)] ?: "",
@@ -2238,7 +2244,7 @@ private val DEPLOY_LAST_INSPECTION_PANEL = booleanPreferencesKey("deploy_last_in
             val profile = forProfile ?: (prefs[ACTIVE_PROFILE] ?: 0)
             prefs[getProfileKey(EXTRA_WORKERS, profile)] = enabled
             if (!enabled) {
-                val current = prefs[getProfileKey(WORKERS_PER_HASH, profile)] ?: 18
+                val current = prefs[getProfileKey(WORKERS_PER_HASH, profile)] ?: defaultWorkersPerHash
                 val maximum = WorkerCountPolicy.defaultMaximum(extraWorkers = false)
                 if (current > maximum) {
                     prefs[getProfileKey(WORKERS_PER_HASH, profile)] =
@@ -2354,6 +2360,14 @@ private val DEPLOY_LAST_INSPECTION_PANEL = booleanPreferencesKey("deploy_last_in
                 prefs.remove(getProfileKey(VK_ACCESS_TOKEN_ENCRYPTED, profile))
                 prefs.remove(getProfileKey(VK_ACCESS_TOKEN, profile))
                 prefs.remove(getProfileKey(VK_ACCESS_TOKEN_USER_ID, profile))
+            }
+            // A successful VK login should enable automatic hash creation by default.
+            // Keep an explicitly selected Auto VK mode or an already enabled Auto API mode.
+            val currentHashMode = prefs[getProfileKey(VK_HASH_MODE, profile)]
+            if (currentHashMode.isNullOrBlank() ||
+                currentHashMode == CsqttConstants.VkAutoHash.MODE_MANUAL
+            ) {
+                prefs[getProfileKey(VK_HASH_MODE, profile)] = CsqttConstants.VkAutoHash.MODE_AUTO_API
             }
         }
     }
@@ -2844,8 +2858,8 @@ private val DEPLOY_LAST_INSPECTION_PANEL = booleanPreferencesKey("deploy_last_in
             deploy.put("vk_hash_mode", prefs[getProfileKey(VK_HASH_MODE, p)] ?: CsqttConstants.VkAutoHash.MODE_MANUAL)
             // the VK access token is a VK account credential: it stays on this device (an export goes to the clipboard
             // and Downloads). Exports before 2.5.2 carried it blank in practice; the import below leaves a stored one alone.
-            deploy.put("workers_per_hash", prefs[getProfileKey(WORKERS_PER_HASH, p)] ?: 18)
-            deploy.put("extra_workers", prefs[getProfileKey(EXTRA_WORKERS, p)] ?: false)
+            deploy.put("workers_per_hash", prefs[getProfileKey(WORKERS_PER_HASH, p)] ?: defaultWorkersPerHash)
+            deploy.put("extra_workers", prefs[getProfileKey(EXTRA_WORKERS, p)] ?: defaultExtraWorkers)
             deploy.put("csqtt_link", prefs[getProfileKey(CSQTT_LINK, p)] ?: "")
             deploy.put("csqtt_link_mode", prefs[getProfileKey(CSQTT_LINK_MODE, p)] ?: false)
             deploy.put("secret_path_enabled", prefs[getProfileKey(DEPLOY_SECRET_PATH_ENABLED, p)] ?: false)

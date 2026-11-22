@@ -65,6 +65,7 @@ import com.csqtt.client.ui.v2.design.V2Theme
 internal fun V2VkAuthDialog(
     onToken: (VkAuthPayload) -> Unit,
     onDismiss: () -> Unit,
+    chooseAccount: Boolean = false,
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -95,6 +96,7 @@ internal fun V2VkAuthDialog(
             },
             onError = { errorMessage = it },
             onPhaseChange = { phase = it },
+            chooseAccount = chooseAccount,
         )
     }
 

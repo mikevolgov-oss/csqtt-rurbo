@@ -261,7 +261,7 @@ class MainActivity : ComponentActivity() {
                 if (design == "classic") CSQTTTheme(themeMode = chosenTheme) {
                     com.csqtt.client.ui.legacy.dialogs.VkAuthDialog(onToken, onDismiss = { showVkAuthDialog = false }, chooseAccount = chooseVkAccount)
                 } else com.csqtt.client.ui.v2.design.CsqttV2Theme(darkTheme = dark, themePalette = UiDesignPresets.darkPalette(design ?: UiDesignPresets.DEFAULT)) {
-                    VkAuthDialog(onToken, onDismiss = { showVkAuthDialog = false }, chooseAccount = chooseVkAccount)
+                    V2VkAuthDialog(onToken, onDismiss = { showVkAuthDialog = false }, chooseAccount = chooseVkAccount)
                 }
             }
             val pendingLink = pendingDeepLink
