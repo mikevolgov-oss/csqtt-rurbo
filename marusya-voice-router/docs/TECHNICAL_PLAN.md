@@ -27,3 +27,31 @@ Before writing the hook implementation or publishing an APK, verify the injectio
 5. Routes ChatGPT Voice output to that device while retaining phone microphone capture.
 6. Handles disconnect/reconnect safely.
 7. Requests no contacts, call-log, or unnecessary permissions.
+
+
+## Investigation update (2026-11-23)
+
+### Candidate no-root runtime
+
+The public fork `konglongbt/LSPatch-A15` is a source-code fork of LSPatch and its README explicitly documents both modern `libxposed` and legacy Xposed module support. Its Gradle settings include the LSPosed core as a Git submodule. This makes it a plausible runtime candidate for the modern module API used by newer modules.
+
+However:
+
+- The fork currently exposes no GitHub Releases (the Releases API returned an empty list).
+- Its README's Android 9+ statement is not proof that this exact fork has been tested on this Realme Android 15 build.
+- The fork's build depends on a pinned Git submodule and a complete Android/Gradle toolchain; it is not a ready-to-install manager APK.
+- The upstream Vector framework documents Android 8.1–17 Beta compatibility, but it requires Magisk or KernelSU with Zygisk. That is not an option on this user's unrooted phone.
+
+References:
+- https://github.com/konglongbt/LSPatch-A15
+- https://github.com/JingMatrix/Vector
+
+### Critical install/data safety constraint
+
+LSPatch patches the ChatGPT package. The patched package has a different signing identity from the Play Store installation, so Android's signature-conflict rejection is expected when attempting an in-place update. Do not uninstall the original ChatGPT app merely to test a patched build: the user's split APK backup does not contain ChatGPT's private app data or login/session state.
+
+Before any install experiment, the implementation must prove a safe path that preserves the original installation and its data. If the only available path requires uninstalling ChatGPT, stop and explain the consequence instead of proceeding.
+
+### Current conclusion
+
+The technical route is plausible but not yet validated end-to-end. The next work is to inspect the LSPatch-A15 submodule/API versions and the routing module's actual source/API entry points, then build and test in CI. No APK should be offered until CI produces a real artifact and the install path is safe.
