@@ -24,6 +24,12 @@ import org.json.JSONObject
 
 private fun <T> Flow<T>.onIo(): Flow<T> = flowOn(Dispatchers.IO)
 
+private val defaultWorkersPerHash: Int
+    get() = if (BuildConfig.TURBO_BUILD) CsqttConstants.Tunnel.DEFAULT_MAX_WORKERS else 18
+
+private val defaultExtraWorkers: Boolean
+    get() = BuildConfig.TURBO_BUILD
+
 internal data class DeploySettingsSnapshot(
     val profile: Int = -1,
     val ip: String = "",
@@ -86,8 +92,8 @@ internal data class ProfileConnectionSnapshot(
     val serverPeerPort: Int = CsqttConstants.Network.DEFAULT_SERVER_PEER_PORT,
     val connectionPassword: String = "",
     val connectionPasswordState: StoredSecretState = StoredSecretState.Missing,
-    val workersPerHash: Int = 18,
-    val extraWorkers: Boolean = false,
+    val workersPerHash: Int = defaultWorkersPerHash,
+    val extraWorkers: Boolean = defaultExtraWorkers,
     val csqttLink: String = "",
     val csqttLinkMode: Boolean = false,
     val subscriptionUrl: String = "",
@@ -494,7 +500,7 @@ private val DEPLOY_LAST_INSPECTION_PANEL = booleanPreferencesKey("deploy_last_in
     /** The most workers the active profile may use: «Экстра потоки» lifts 70 to 100, a subscription can lower it. */
     private fun workersMaximum(prefs: Preferences): Int {
         val profile = prefs[ACTIVE_PROFILE] ?: 0
-        val isExtra = prefs[getProfileKey(EXTRA_WORKERS, profile)] ?: false
+        val isExtra = prefs[getProfileKey(EXTRA_WORKERS, profile)] ?: defaultExtraWorkers
         val defaultMax = WorkerCountPolicy.defaultMaximum(isExtra)
         return prefs[getProfileKey(SUBSCRIPTION_POWER, profile)]
             ?.takeIf { it in 10..100 }
@@ -504,7 +510,7 @@ private val DEPLOY_LAST_INSPECTION_PANEL = booleanPreferencesKey("deploy_last_in
     val workersMaximum: Flow<Int> = dataStore.data.map { prefs -> workersMaximum(prefs) }
     val workersPerHash: Flow<Int> = dataStore.data.map { prefs ->
         val profile = prefs[ACTIVE_PROFILE] ?: 0
-        val current = prefs[getProfileKey(WORKERS_PER_HASH, profile)] ?: 18
+        val current = prefs[getProfileKey(WORKERS_PER_HASH, profile)] ?: defaultWorkersPerHash
         WorkerCountPolicy.normalize(current, maximum = workersMaximum(prefs))
     }
     val protocol: Flow<String> = dataStore.data.map { prefs ->
