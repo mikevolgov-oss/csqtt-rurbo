@@ -155,7 +155,7 @@ internal fun HappTunnelScreen(settingsStore: SettingsStore, version: String, onS
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
                 HappField("Пароль туннеля", password, { password = it }, Modifier.weight(1.3f), password = true, visibilityKey = profile, enabled = !busy, compact = true, shape = pill, floatingLabel = true)
                 Box(Modifier.weight(1f)) {
-                if (!linkTokenActive && ownerHashes.isEmpty() && authMode != "auto_js" && hashMode == "manual" || ownerHashes.isNotEmpty()) {
+                if (!linkTokenActive && ownerHashes.isEmpty() && authMode != "auto_js" && hashMode == "manual") {
                     V2PillButton("Настроить хеши", { showHashes = true }, modifier = Modifier.fillMaxWidth(), height = layout.fieldHeight, horizontalPadding = 4.dp, enabled = !busy, style = V2PillStyle.Outline, shape = pill)
                 } else {
                     V2PillButton(if (linkTokenActive) "Аккаунт из ссылки" else if (token.isNotBlank()) "Аккаунт VK подключён" else "Войти в VK", onVkAuthRequested, modifier = Modifier.fillMaxWidth(), height = layout.fieldHeight, horizontalPadding = 4.dp, enabled = !busy && !linkTokenActive, style = V2PillStyle.Accent, shape = pill, maxLines = 2)
