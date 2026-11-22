@@ -72,3 +72,6 @@ The upstream module uses the modern `libxposed` entry API and calls `AudioTrack.
 
 
 The first CI attempt exposed an obsolete SDK setup action that tried to install the removed Android SDK `tools` package before reaching the build. The workflow now locates the runner's installed `sdkmanager` directly, accepts SDK licenses, and installs only the required API 36 platform and Build Tools 36.1.0. The corrected workflow is committed; a subsequent run is required to validate this change.
+
+
+CI follow-up: the first direct `sdkmanager --licenses` pipeline exposed the runner's `pipefail` interaction with the `yes` command (the SDK manager accepted the licenses, then the upstream pipe closed). The workflow now disables pipefail only around license acceptance, then restores it before SDK installation so actual SDK installation errors remain fatal.
