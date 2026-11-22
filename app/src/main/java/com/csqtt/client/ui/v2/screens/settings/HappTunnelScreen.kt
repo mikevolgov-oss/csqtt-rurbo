@@ -162,6 +162,17 @@ internal fun HappTunnelScreen(settingsStore: SettingsStore, version: String, onS
                 }
                 }
                 }
+                if (!linkTokenActive && ownerHashes.isEmpty() && authMode != "auto_js" && hashMode == "manual") {
+                    V2PillButton(
+                        if (token.isNotBlank()) "Аккаунт VK подключён" else "Войти в VK",
+                        onVkAuthRequested,
+                        modifier = Modifier.fillMaxWidth(),
+                        height = layout.fieldHeight,
+                        enabled = !busy,
+                        style = V2PillStyle.Accent,
+                        shape = pill,
+                    )
+                }
                 if (ownerHashes.isNotEmpty()) Text("Хеши владельца: ${ownerHashes.count { it !in removedOwner }} · свои: ${parts.size}", color = c.accent, fontSize = 12.sp)
                 if (ownerHashes.isEmpty() && !linkTokenActive) HappChoice("Режим хешей", when(hashMode) { "auto_api" -> "Авто API"; "auto_js" -> "Авто ВК"; else -> "Ручные хеши" }, listOf("Ручные хеши", "Авто API", "Авто ВК"), ::changeHash,
                     compact = true, shape = pill, tone = if(hashMode == "auto_js") orange else green, enabled = !busy,
