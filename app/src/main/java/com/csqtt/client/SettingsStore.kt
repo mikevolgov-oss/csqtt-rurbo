@@ -2361,6 +2361,14 @@ private val DEPLOY_LAST_INSPECTION_PANEL = booleanPreferencesKey("deploy_last_in
                 prefs.remove(getProfileKey(VK_ACCESS_TOKEN, profile))
                 prefs.remove(getProfileKey(VK_ACCESS_TOKEN_USER_ID, profile))
             }
+            // A successful VK login should enable automatic hash creation by default.
+            // Keep an explicitly selected Auto VK mode or an already enabled Auto API mode.
+            val currentHashMode = prefs[getProfileKey(VK_HASH_MODE, profile)]
+            if (currentHashMode.isNullOrBlank() ||
+                currentHashMode == CsqttConstants.VkAutoHash.MODE_MANUAL
+            ) {
+                prefs[getProfileKey(VK_HASH_MODE, profile)] = CsqttConstants.VkAutoHash.MODE_AUTO_API
+            }
         }
     }
 
