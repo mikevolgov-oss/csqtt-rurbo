@@ -69,3 +69,6 @@ A GitHub Actions workflow was added at `.github/workflows/marusya-voice-router.y
 This pipeline intentionally builds the upstream module unchanged. A successful build proves compilation and tests only; it does not prove runtime compatibility on the Realme RMX3760 or solve the separate LSPatch signature/install conflict. Do not install a patched ChatGPT package or remove the Play Store app as part of this pipeline.
 
 The upstream module uses the modern `libxposed` entry API and calls `AudioTrack.setPreferredDevice` for scoped Voice playback, with a separate built-in back-microphone preference. Its source is MIT-licensed and remains attributed to the original author. The public release itself excludes development-only system-server observation and legacy compatibility entries.
+
+
+The first CI attempt exposed an obsolete SDK setup action that tried to install the removed Android SDK `tools` package before reaching the build. The workflow now locates the runner's installed `sdkmanager` directly, accepts SDK licenses, and installs only the required API 36 platform and Build Tools 36.1.0. The corrected workflow is committed; a subsequent run is required to validate this change.
