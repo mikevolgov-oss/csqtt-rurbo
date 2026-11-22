@@ -1,6 +1,8 @@
 name: Build CSQTT Turbo APK
 
 on:
+  push:
+    branches: [csqtt-turbo-tuning]
   workflow_dispatch:
   pull_request:
     branches: [main]
