@@ -74,7 +74,7 @@ use wrap::derive_wrap_key;
 const EXIT_NORMAL: i32 = 0;
 const EXIT_FATAL: i32 = 1;
 const EXIT_TUN_LOST: i32 = 3;
-const MAX_VK_HASHES: usize = 6;
+const MAX_VK_HASHES: usize = 7;
 pub const MAX_WORKERS: usize = 100;
 const STREAMS_PER_RUNTIME_WORKER: usize = 8;
 const STDIN_QUEUE_CAPACITY: usize = 64;
