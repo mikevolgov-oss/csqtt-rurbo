@@ -2244,7 +2244,7 @@ private val DEPLOY_LAST_INSPECTION_PANEL = booleanPreferencesKey("deploy_last_in
             val profile = forProfile ?: (prefs[ACTIVE_PROFILE] ?: 0)
             prefs[getProfileKey(EXTRA_WORKERS, profile)] = enabled
             if (!enabled) {
-                val current = prefs[getProfileKey(WORKERS_PER_HASH, profile)] ?: 18
+                val current = prefs[getProfileKey(WORKERS_PER_HASH, profile)] ?: defaultWorkersPerHash
                 val maximum = WorkerCountPolicy.defaultMaximum(extraWorkers = false)
                 if (current > maximum) {
                     prefs[getProfileKey(WORKERS_PER_HASH, profile)] =
@@ -2850,8 +2850,8 @@ private val DEPLOY_LAST_INSPECTION_PANEL = booleanPreferencesKey("deploy_last_in
             deploy.put("vk_hash_mode", prefs[getProfileKey(VK_HASH_MODE, p)] ?: CsqttConstants.VkAutoHash.MODE_MANUAL)
             // the VK access token is a VK account credential: it stays on this device (an export goes to the clipboard
             // and Downloads). Exports before 2.5.2 carried it blank in practice; the import below leaves a stored one alone.
-            deploy.put("workers_per_hash", prefs[getProfileKey(WORKERS_PER_HASH, p)] ?: 18)
-            deploy.put("extra_workers", prefs[getProfileKey(EXTRA_WORKERS, p)] ?: false)
+            deploy.put("workers_per_hash", prefs[getProfileKey(WORKERS_PER_HASH, p)] ?: defaultWorkersPerHash)
+            deploy.put("extra_workers", prefs[getProfileKey(EXTRA_WORKERS, p)] ?: defaultExtraWorkers)
             deploy.put("csqtt_link", prefs[getProfileKey(CSQTT_LINK, p)] ?: "")
             deploy.put("csqtt_link_mode", prefs[getProfileKey(CSQTT_LINK_MODE, p)] ?: false)
             deploy.put("secret_path_enabled", prefs[getProfileKey(DEPLOY_SECRET_PATH_ENABLED, p)] ?: false)
