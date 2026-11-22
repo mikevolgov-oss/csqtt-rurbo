@@ -9,6 +9,8 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import java.security.MessageDigest
@@ -24,15 +26,13 @@ object VkAutoCallsManager {
             get() = createdCalls < requestedCalls
     }
 
-    private data class ActiveCall(val callId: String, val hashKey: String)
+    private data class ActiveCall(val callId: String, val hashKey: String, val token: String)
     private data class PendingLog(val key: String, val message: String, val priority: Int, val isError: Boolean)
 
     private val activeCalls = CopyOnWriteArrayList<ActiveCall>()
+    private val startMutex = Mutex()
     private val pendingLogs = ArrayList<PendingLog>()
     private val pendingLogsLock = Any()
-
-    @Volatile
-    private var activeToken: String? = null
 
     fun hasActiveCalls(): Boolean = activeCalls.isNotEmpty()
 
@@ -54,11 +54,20 @@ object VkAutoCallsManager {
         token: String,
         workers: Int,
         clearStoredTokenOnInvalid: Boolean = true,
+    ): StartResult? = startMutex.withLock {
+        startAutoCallsLocked(context, token, workers, clearStoredTokenOnInvalid)
+    }
+
+    private suspend fun startAutoCallsLocked(
+        context: Context,
+        token: String,
+        workers: Int,
+        clearStoredTokenOnInvalid: Boolean,
     ): StartResult? {
         if (token.isBlank()) return null
 
         synchronized(pendingLogsLock) { pendingLogs.clear() }
-        activeCalls.clear()
+        val createdCalls = ArrayList<ActiveCall>()
 
         val count = callCountForWorkers(workers)
         val hashes = ArrayList<String>(count)
@@ -78,9 +87,14 @@ object VkAutoCallsManager {
             completedSlots++
             when (result) {
                 is VkApiResult.Ok<*> -> {
-                    activeToken = token
                     val call = result.value as VkApi.StartedCall
-                    activeCalls.add(ActiveCall(callId = call.callId, hashKey = sha256Hex(call.hash)))
+                    val activeCall = ActiveCall(
+                        callId = call.callId,
+                        hashKey = sha256Hex(call.hash),
+                        token = token,
+                    )
+                    activeCalls.add(activeCall)
+                    createdCalls.add(activeCall)
                     hashes.add(call.hash)
                     log(
                         "vk_call_created_progress",
@@ -111,8 +125,8 @@ object VkAutoCallsManager {
                             95,
                             true,
                         )
-                        finishCalls(ArrayList(activeCalls).also { activeCalls.clear() }, token, logResults = false)
-                        activeToken = null
+                        activeCalls.removeAll(createdCalls.toSet())
+                        finishCalls(createdCalls, logResults = false)
                         return null
                     }
                 }
@@ -161,24 +175,21 @@ object VkAutoCallsManager {
 
     fun finishActiveCalls() {
         if (activeCalls.isEmpty()) return
-        val token = activeToken
         val calls = ArrayList(activeCalls)
-        activeCalls.clear()
-        activeToken = null
-        if (token.isNullOrBlank()) return
+        activeCalls.removeAll(calls.toSet())
 
         TunnelManager.scope.launch(Dispatchers.IO + NonCancellable) {
             withTimeoutOrNull(CsqttConstants.VkAutoHash.FINISH_CALLS_TIMEOUT_MS) {
-                finishCalls(calls, token, logResults = true)
+                finishCalls(calls, logResults = true)
             }
         }
     }
 
-    private suspend fun finishCalls(calls: List<ActiveCall>, token: String, logResults: Boolean) {
+    private suspend fun finishCalls(calls: List<ActiveCall>, logResults: Boolean) {
         val results = coroutineScope {
             val deferredResults = calls.mapIndexed { index, call ->
                 async(Dispatchers.IO) {
-                    index to VkApi.forceFinishCall(token, call.callId)
+                    index to VkApi.forceFinishCall(call.token, call.callId)
                 }
             }
             deferredResults.awaitAll()
