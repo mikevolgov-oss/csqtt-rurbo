@@ -38,7 +38,7 @@ jobs:
             upstream/module/src/main/java/io/github/peiyingyao/chatgptvoiceroute/RouteContext.java
           grep -q "android:name=\"${CLONE_PACKAGE}\"" upstream/module/xposed/src/main/AndroidManifest.xml
           grep -q "android:value=\"${CLONE_PACKAGE}\"" upstream/module/xposed/src/main/AndroidManifest.xml
-          if grep -RIn --exclude-dir=.git 'com.openai.chatgpt' upstream/module; then
+          if grep -RInE --exclude-dir=.git 'com\\.openai\\.chatgpt([^.]|$)' upstream/module; then
             echo "Old target package remains in module sources" >&2
             exit 1
           fi
