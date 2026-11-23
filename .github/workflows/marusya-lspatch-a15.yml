@@ -1,0 +1,72 @@
+name: Build LSPatch-A15 loader
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ marusya-voice-router ]
+    paths:
+      - ".github/workflows/marusya-lspatch-a15.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout LSPatch-A15 source
+        uses: actions/checkout@v4
+        with:
+          repository: konglongbt/LSPatch-A15
+          ref: master
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK, NDK and CMake
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager --install "platforms;android-37" "build-tools;37.0.0" "ndk;29.0.13113456" "cmake;3.29.8"
+          yes | sdkmanager --licenses >/dev/null || true
+
+      - name: Set up Ninja
+        uses: seanmiddleditch/gha-setup-ninja@v6
+        with:
+          version: 1.12.0
+
+      - name: Remove Android SDK CMake shim
+        run: rm -rf "$ANDROID_HOME/cmake"
+
+      - name: Build manager and patcher (debug)
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo 'org.gradle.parallel=true'
+            echo 'org.gradle.jvmargs=-Xmx2048m'
+            echo 'android.native.buildOutput=verbose'
+          } >> gradle.properties
+          ./gradlew buildDebug
+
+      - name: Upload loader APK and patcher JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: lspatch-a15-debug
+          path: |
+            out/debug/*.apk
+            out/debug/*.jar
+          if-no-files-found: error
+          retention-days: 14
