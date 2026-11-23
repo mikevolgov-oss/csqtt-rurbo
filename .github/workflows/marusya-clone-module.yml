@@ -1,0 +1,88 @@
+name: Build Marusya router for ChatGPT clone
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ marusya-voice-router ]
+    paths:
+      - ".github/workflows/marusya-clone-module.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CLONE_PACKAGE: com.openai.chatgpt.marusya
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Checkout pinned audio-router source
+        uses: actions/checkout@v4
+        with:
+          repository: peiyingyao/io.github.peiyingyao.chatgptvoiceroute
+          ref: 6363e791ded3889b9b27b1fe6ed6057086778cad
+          path: upstream
+
+      - name: Retarget module scope to the separate ChatGPT clone
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -RIl --exclude-dir=.git 'com.openai.chatgpt' upstream/module \
+            | xargs -r sed -i "s/com.openai.chatgpt/${CLONE_PACKAGE}/g"
+          test "$(cat upstream/module/xposed/src/main/resources/META-INF/xposed/scope.list)" = "${CLONE_PACKAGE}"
+          grep -q "CHATGPT_PACKAGE = \"${CLONE_PACKAGE}\"" \
+            upstream/module/src/main/java/io/github/peiyingyao/chatgptvoiceroute/RouteContext.java
+          grep -q "android:name=\"${CLONE_PACKAGE}\"" upstream/module/xposed/src/main/AndroidManifest.xml
+          grep -q "android:value=\"${CLONE_PACKAGE}\"" upstream/module/xposed/src/main/AndroidManifest.xml
+          if grep -RIn --exclude-dir=.git 'com.openai.chatgpt' upstream/module; then
+            echo "Old target package remains in module sources" >&2
+            exit 1
+          fi
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install Android SDK packages
+        run: |
+          yes | sdkmanager --licenses
+          sdkmanager "platforms;android-36" "build-tools;36.1.0"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Run module tests
+        working-directory: upstream/module
+        run: gradle test --no-daemon
+
+      - name: Build clone-scoped Xposed module
+        working-directory: upstream/module
+        run: gradle :xposed:assembleDebug --no-daemon
+
+      - name: Verify APK contains clone package scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="$(find upstream/module/xposed/build/outputs/apk/debug -name '*.apk' -print -quit)"
+          test -n "$APK"
+          unzip -p "$APK" assets/META-INF/xposed/scope.list | grep -Fx "${CLONE_PACKAGE}"
+          echo "Built: $APK"
+
+      - name: Upload clone-scoped module
+        uses: actions/upload-artifact@v4
+        with:
+          name: marusya-voice-router-clone-scope
+          path: upstream/module/xposed/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
