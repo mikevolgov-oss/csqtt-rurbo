@@ -51,6 +51,22 @@ Do not use the currently published alpha for this project:
 - Its release is a prerelease with no downloadable APK assets.
 - Its signature-spoofing feature is an in-process PackageManager hook; it does not change Android's install-time signing-certificate check.
 
+## New build: clone-scoped audio module
+
+A dedicated workflow now builds a second variant of the audio module for the planned independent clone package:
+
+- Target package: `com.openai.chatgpt.marusya`
+- Workflow: `.github/workflows/marusya-clone-module.yml`
+- Upstream source is pinned to `6363e791ded3889b9b27b1fe6ed6057086778cad`.
+- The workflow rewrites the module's runtime package constant, Xposed scope list, and Android manifest scope/query, then runs JVM tests and builds the Xposed APK.
+- The build verifies that the packaged `META-INF/xposed/scope.list` contains the clone package.
+
+To use this module, any separately cloned ChatGPT app must be created with exactly the package ID `com.openai.chatgpt.marusya`; the APK Cloner's automatic package-name suggestion is not sufficient. This workflow does not create the ChatGPT clone and does not prove that ChatGPT login works under the new package.
+
+## Remaining end-to-end blockers
+
+The clone must still be generated from the user's installed base + split APKs, installed alongside the official app, and successfully signed into. Then the clone must be patched by a compatible LSPatch-A15 build in a way that preserves all required split APKs. Only after those steps can the audio module be loaded and the Realme/VK Capsule route tested. The original ChatGPT app and CSQTT Turbo remain untouched.
+
 ## Remaining end-to-end blockers
 
 Even if a separate ChatGPT clone can be produced, it still needs:
