@@ -76,7 +76,7 @@ jobs:
           set -euo pipefail
           APK="$(find upstream/module/xposed/build/outputs/apk/debug -name '*.apk' -print -quit)"
           test -n "$APK"
-          unzip -p "$APK" assets/META-INF/xposed/scope.list | grep -Fx "${CLONE_PACKAGE}"
+          unzip -p "$APK" META-INF/xposed/scope.list | grep -Fx "${CLONE_PACKAGE}"
           echo "Built: $APK"
 
       - name: Upload clone-scoped module
